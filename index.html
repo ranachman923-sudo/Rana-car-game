@@ -1,0 +1,140 @@
+package com.example.calculatorvault
+
+import android.content.Context
+import android.content.Intent
+import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+// 1. मुख्य कैलकुलेटर एक्टिविटी
+class MainActivity : ComponentActivity() {
+
+    // डिफॉल्ट पिन और रिकवरी कोड
+    private val SECRET_PIN = "1234"
+    private val RESET_CODE = "11223344"
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            CalculatorVaultScreen(
+                onEqualsPressed = { input -> checkPassword(input) }
+            )
+        }
+    }
+
+    private fun checkPassword(input: String) {
+        when (input) {
+            SECRET_PIN -> {
+                // सही पासवर्ड दर्ज होने पर सीक्रेट स्क्रीन खोलें
+                startActivity(Intent(this, SecretVaultActivity::class.java))
+            }
+            RESET_CODE -> {
+                // पासवर्ड रिकवरी
+                Toast.makeText(this, "सुरक्षा प्रश्न सत्यापित करें या ईमेल सपोर्ट से संपर्क करें", Toast.LENGTH_LONG).show()
+            }
+            else -> {
+                Toast.makeText(this, "गलत पिन!", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+}
+
+// 2. कैलकुलेटर UI (Jetpack Compose)
+@Composable
+fun CalculatorVaultScreen(onEqualsPressed: (String) -> Unit) {
+    var displayText by remember { mutableStateOf("0") }
+    var inputBuffer by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF121212))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Bottom
+    ) {
+        // स्क्रीन डिस्प्ले
+        Text(
+            text = displayText,
+            fontSize = 48.sp,
+            color = Color.White,
+            textAlign = TextAlign.End,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 32.dp, horizontal = 16.dp)
+        )
+
+        // कीपैड बटन्स
+        val buttons = listOf(
+            listOf("7", "8", "9", "C"),
+            listOf("4", "5", "6", "+"),
+            listOf("1", "2", "3", "-"),
+            listOf("0", "=")
+        )
+
+        for (row in buttons) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                for (btn in row) {
+                    val weight = if (btn == "=") 3f else 1f
+                    Button(
+                        onClick = {
+                            when (btn) {
+                                "C" -> {
+                                    inputBuffer = ""
+                                    displayText = "0"
+                                }
+                                "=" -> {
+                                    onEqualsPressed(inputBuffer)
+                                    inputBuffer = ""
+                                    displayText = "0"
+                                }
+                                else -> {
+                                    inputBuffer += btn
+                                    displayText = inputBuffer
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(weight)
+                            .height(70.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (btn == "=") Color(0xFF2196F3) else Color(0xFF2C2C2C)
+                        )
+                    ) {
+                        Text(text = btn, fontSize = 24.sp, color = Color.White)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// 3. सीक्रेट वॉल्ट स्क्रीन (अनलॉक होने के बाद खुलने वाली स्क्रीन)
+class SecretVaultActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // यहाँ आप अपनी गैलरी या हिडन फ़ाइलों का लेआउट जोड़ सकते हैं
+        val textView = android.widget.TextView(this).apply {
+            text = "Welcome to Secret Vault!"
+            textSize = 24f
+            setPadding(32, 32, 32, 32)
+        }
+        setContentView(textView)
+    }
+}
